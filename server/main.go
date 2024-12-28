@@ -5,15 +5,18 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"time"
+	"fmt"
+	// mysql ドライバのインポート
+	_ "github.com/go-sql-driver/mysql"
 
-	_ "github.com/mattn/go-sqlite3"
 )
 
 const (
-	dbFileName     = "db.sqlite3"
+	dbFileName     = "db.mysql"
 	createPostTable = `
 		CREATE TABLE IF NOT EXISTS posts (
-			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			id INTEGER PRIMARY KEY AUTO_INCREMENT,
 			content TEXT
 		)
 	`
@@ -30,26 +33,43 @@ type Post struct {
 
 func init() {
 	// データベースとの接続
-	db, err := sql.Open("sqlite3", dbFileName)
-	if err != nil {
-		log.Fatalf("Failed to connect to database: %v", err)
-	}
-	defer db.Close()
+	var db *sql.DB
+	var err error
+    for {
+        db, err = sql.Open("mysql", "test:test@(db:3306)/test")
+        if err != nil {
+            fmt.Println("Failed to connect to database: %v", err)
+            time.Sleep(5 * time.Second)
+        } else {
+            break
+        }
+    }
+
+    defer db.Close()
 
 	// テーブルの作成
 	_, err = db.Exec(createPostTable)
 	if err != nil {
 		log.Fatalf("Failed to create table: %v", err)
 	}
+	
 }
 
 func main() {
-	db, err := sql.Open("sqlite3", dbFileName)
-	if err != nil {
-		log.Fatalf("Failed to connect to database: %v", err)
+	
+	// データベースとの接続
+	var db *sql.DB
+	var err error
+	for {
+		db, err = sql.Open("mysql", "test:test@(db:3306)/test")
+		if err != nil {
+			fmt.Println("Failed to connect to database: %v", err)
+			time.Sleep(5 * time.Second)
+		} else {
+			break
+		}
 	}
 	defer db.Close()
-
 	http.HandleFunc("/posts", func(w http.ResponseWriter, r *http.Request) {
 		switch r.Method {
 		case http.MethodGet:
